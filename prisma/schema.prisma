@@ -13,6 +13,7 @@ model DailyLog {
   mits              Json     @default("[]")
   routineChecklist  Json     @default("[]")
   dietChecklist     Json     @default("[]")
+  dietNotes         String?
   brainDump         String?
   sideQuests        String?
   workNotes         String?

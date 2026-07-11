@@ -10,6 +10,7 @@ export type DailyLogData = {
   mits: MitItem[];
   routineChecklist: ChecklistItem[];
   dietChecklist: ChecklistItem[];
+  dietNotes: string;
   brainDump: string;
   sideQuests: string;
   workNotes: string;
@@ -25,6 +26,7 @@ export async function getOrCreateLog(date: string): Promise<DailyLogData> {
       mits: (existing.mits as MitItem[]) ?? [],
       routineChecklist: (existing.routineChecklist as ChecklistItem[]) ?? [],
       dietChecklist: (existing.dietChecklist as ChecklistItem[]) ?? [],
+      dietNotes: existing.dietNotes ?? "",
       brainDump: existing.brainDump ?? "",
       sideQuests: existing.sideQuests ?? "",
       workNotes: existing.workNotes ?? "",
@@ -37,6 +39,7 @@ export async function getOrCreateLog(date: string): Promise<DailyLogData> {
     mits: [],
     routineChecklist: DEFAULT_ROUTINE_CHECKLIST,
     dietChecklist: DEFAULT_DIET_CHECKLIST,
+    dietNotes: "",
     brainDump: "",
     sideQuests: "",
     workNotes: "",
@@ -59,11 +62,9 @@ async function ensureLog(date: string) {
   });
 }
 
-export async function updateLogField(
-  date: string,
-  field: "brainDump" | "sideQuests" | "workNotes" | "takeaways",
-  value: string
-) {
+export type FreeTextField = "dietNotes" | "brainDump" | "sideQuests" | "workNotes" | "takeaways";
+
+export async function updateLogField(date: string, field: FreeTextField, value: string) {
   await ensureLog(date);
   await prisma.dailyLog.update({ where: { date }, data: { [field]: value } });
   revalidatePath(date === todayKey() ? "/" : `/day/${date}`);

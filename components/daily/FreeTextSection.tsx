@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { updateLogField } from "@/app/actions/daily-log";
+import { updateLogField, type FreeTextField } from "@/app/actions/daily-log";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-
-type Field = "brainDump" | "sideQuests" | "workNotes" | "takeaways";
 
 export function FreeTextSection({
   title,
@@ -16,7 +14,7 @@ export function FreeTextSection({
 }: {
   title: string;
   date: string;
-  field: Field;
+  field: FreeTextField;
   initialValue: string;
   placeholder?: string;
   rows?: number;

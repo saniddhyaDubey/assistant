@@ -6,10 +6,17 @@ import { MitList } from "./MitList";
 import { Checklist } from "./Checklist";
 import { FreeTextSection } from "./FreeTextSection";
 import { DateNav } from "@/components/ui/DateNav";
+import { formatTime } from "@/lib/date";
 
 export async function DailyView({ date, isTodayView = false }: { date: string; isTodayView?: boolean }) {
   const log = await getOrCreateLog(date);
-  const inboxItems = isTodayView ? await listUnsortedToday() : [];
+  const inboxItems = isTodayView
+    ? (await listUnsortedToday()).map((item) => ({
+        id: item.id,
+        text: item.text,
+        time: formatTime(item.createdAt),
+      }))
+    : [];
 
   return (
     <div>
@@ -27,6 +34,14 @@ export async function DailyView({ date, isTodayView = false }: { date: string; i
       <MitList date={date} initialItems={log.mits} />
       <Checklist title="routine" date={date} field="routineChecklist" initialItems={log.routineChecklist} />
       <Checklist title="diet" date={date} field="dietChecklist" initialItems={log.dietChecklist} />
+      <FreeTextSection
+        title="diet notes"
+        date={date}
+        field="dietNotes"
+        initialValue={log.dietNotes}
+        placeholder="anything about food today — cravings, skipped meals, what worked..."
+        rows={2}
+      />
       <FreeTextSection
         title="brain dump"
         date={date}

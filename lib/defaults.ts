@@ -2,7 +2,9 @@ export type ChecklistItem = { label: string; done: boolean };
 export type MitItem = { text: string; done: boolean };
 
 export const DEFAULT_ROUTINE_CHECKLIST: ChecklistItem[] = [
+  { label: "Internship", done: false },
   { label: "Codeforces", done: false },
+  { label: "Workout", done: false },
   { label: "Blog written", done: false },
   { label: "Open source", done: false },
   { label: "Job application", done: false },

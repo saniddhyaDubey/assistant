@@ -12,6 +12,15 @@ export function todayKey(): string {
   }).format(new Date());
 }
 
+// Formats an instant as HH:mm in the user's timezone (for capture timestamps).
+export function formatTime(d: Date): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+}
+
 export function keyToDate(key: string): Date {
   const [y, m, d] = key.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d));
