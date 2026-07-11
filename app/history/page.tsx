@@ -1,5 +1,8 @@
 import { listLogsInRange } from "@/app/actions/daily-log";
 import { lastNDays } from "@/lib/date";
+
+// Render per-request: the 90-day window and its data change daily.
+export const dynamic = "force-dynamic";
 import { StreakCalendar } from "@/components/history/StreakCalendar";
 import { TakeawaysFeed } from "@/components/history/TakeawaysFeed";
 import { SectionHeader } from "@/components/ui/SectionHeader";
