@@ -22,12 +22,33 @@ export function FreeTextSection({
   const [value, setValue] = useState(initialValue);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastServer = useRef(initialValue);
 
   useEffect(() => {
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
   }, []);
+
+  // The server can change this field behind our back (inbox "→ sort" appends
+  // to it). Sync those changes in instead of letting stale local state sit —
+  // and later autosave — over them.
+  useEffect(() => {
+    if (initialValue === lastServer.current) return;
+    const prev = lastServer.current;
+    lastServer.current = initialValue;
+    setValue((current) => {
+      if (current === initialValue) return current; // already in sync
+      if (current === prev) return initialValue; // no local edits — adopt server value
+      if (initialValue.startsWith(prev)) {
+        // Local edits in flight; graft the server-side addition onto them.
+        const appended = initialValue.slice(prev.length).replace(/^\n+/, "");
+        const base = current.replace(/\s+$/, "");
+        return base ? `${base}\n${appended}` : appended;
+      }
+      return current; // diverged some other way — keep what the user sees
+    });
+  }, [initialValue]);
 
   function onChange(next: string) {
     setValue(next);

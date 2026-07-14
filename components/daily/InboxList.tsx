@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { deleteInboxItem, sortInboxItemTo } from "@/app/actions/inbox";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 
@@ -13,15 +13,30 @@ const DESTINATIONS = [
 ] as const;
 
 export function InboxList({ items }: { items: InboxItemData[] }) {
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  // Optimistically hide items on click so the UI responds instantly; unhide
+  // if the server action fails.
+  const [hiddenIds, setHiddenIds] = useState<string[]>([]);
 
-  if (items.length === 0) return null;
+  function run(id: string, action: () => Promise<void>) {
+    setHiddenIds((ids) => [...ids, id]);
+    startTransition(async () => {
+      try {
+        await action();
+      } catch {
+        setHiddenIds((ids) => ids.filter((x) => x !== id));
+      }
+    });
+  }
+
+  const visible = items.filter((item) => !hiddenIds.includes(item.id));
+  if (visible.length === 0) return null;
 
   return (
     <div className="mb-8">
-      <SectionHeader>inbox ({items.length})</SectionHeader>
+      <SectionHeader>inbox ({visible.length})</SectionHeader>
       <ul className="flex flex-col gap-1.5">
-        {items.map((item) => (
+        {visible.map((item) => (
           <li
             key={item.id}
             className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border border-border px-3 py-2 text-sm"
@@ -34,16 +49,14 @@ export function InboxList({ items }: { items: InboxItemData[] }) {
               {DESTINATIONS.map((dest) => (
                 <button
                   key={dest.field}
-                  disabled={isPending}
-                  onClick={() => startTransition(() => sortInboxItemTo(item.id, dest.field))}
+                  onClick={() => run(item.id, () => sortInboxItemTo(item.id, dest.field))}
                   className="hover:text-accent transition-colors"
                 >
                   → {dest.label}
                 </button>
               ))}
               <button
-                disabled={isPending}
-                onClick={() => startTransition(() => deleteInboxItem(item.id))}
+                onClick={() => run(item.id, () => deleteInboxItem(item.id))}
                 className="hover:text-accent transition-colors"
               >
                 ×
