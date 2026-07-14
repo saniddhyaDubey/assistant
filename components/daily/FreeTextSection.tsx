@@ -31,11 +31,12 @@ export function FreeTextSection({
   }, []);
 
   // The server can change this field behind our back (inbox "→ sort" appends
-  // to it). Sync those changes in instead of letting stale local state sit —
-  // and later autosave — over them.
+  // to it). Sync those changes in — but never re-apply echoes of our own
+  // saves, and never an echo older than what we've already sent.
   useEffect(() => {
     if (initialValue === lastServer.current) return;
     const prev = lastServer.current;
+    if (prev.startsWith(initialValue)) return; // stale echo of an older save
     lastServer.current = initialValue;
     setValue((current) => {
       if (current === initialValue) return current; // already in sync
@@ -55,6 +56,9 @@ export function FreeTextSection({
     setStatus("saving");
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
+      // Record what we sent so the revalidation echo of this save is
+      // recognized as our own text, not as a server-side change.
+      lastServer.current = next;
       await updateLogField(date, field, next);
       setStatus("saved");
       timer.current = setTimeout(() => setStatus("idle"), 1200);
