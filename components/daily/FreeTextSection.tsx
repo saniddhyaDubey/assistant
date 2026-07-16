@@ -23,6 +23,35 @@ export function FreeTextSection({
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastServer = useRef(initialValue);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Fit height to content — grows as text comes in (typed or sorted from the
+  // inbox), shrinks when text is deleted. `rows` stays the minimum.
+  function fit() {
+    const el = textareaRef.current;
+    if (!el || el.clientWidth === 0) return; // layout not settled — don't measure
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight + 2}px`; // +2 for the 1px borders
+  }
+
+  useEffect(fit, [value]);
+
+  // Width changes (layout settling, window resize) change how text wraps, so
+  // the fitted height is only valid for the width it was measured at.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    let lastWidth = el.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (el.clientWidth !== lastWidth) {
+        lastWidth = el.clientWidth;
+        fit();
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -74,11 +103,12 @@ export function FreeTextSection({
         </span>
       </div>
       <textarea
+        ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         rows={rows}
-        className="w-full resize-y border border-border bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-foreground"
+        className="w-full resize-none overflow-hidden border border-border bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-foreground"
       />
     </div>
   );
