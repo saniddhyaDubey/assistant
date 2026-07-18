@@ -1,5 +1,5 @@
 import { getOrCreateLog } from "@/app/actions/daily-log";
-import { listUnsortedToday } from "@/app/actions/inbox";
+import { listUnsortedToday, sweepStaleInbox } from "@/app/actions/inbox";
 import { QuickCapture } from "./QuickCapture";
 import { InboxList } from "./InboxList";
 import { MitList } from "./MitList";
@@ -9,6 +9,7 @@ import { DateNav } from "@/components/ui/DateNav";
 import { formatTime } from "@/lib/date";
 
 export async function DailyView({ date, isTodayView = false }: { date: string; isTodayView?: boolean }) {
+  if (isTodayView) await sweepStaleInbox();
   const log = await getOrCreateLog(date);
   const inboxItems = isTodayView
     ? (await listUnsortedToday()).map((item) => ({

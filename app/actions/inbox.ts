@@ -58,3 +58,45 @@ export async function deleteInboxItem(id: string) {
   await prisma.inboxItem.delete({ where: { id } });
   revalidatePath("/");
 }
+
+// End-of-day safety net: any capture left unsorted when its day ended gets
+// moved into that day's brain dump, so thoughts never silently vanish at the
+// day boundary. Runs on each load of the today view; no-op when nothing is
+// stale.
+export async function sweepStaleInbox() {
+  const stale = await prisma.inboxItem.findMany({
+    where: { sorted: false, date: { lt: todayKey() } },
+    orderBy: { createdAt: "asc" },
+  });
+  if (stale.length === 0) return;
+
+  const byDate = new Map<string, typeof stale>();
+  for (const item of stale) {
+    byDate.set(item.date, [...(byDate.get(item.date) ?? []), item]);
+  }
+
+  for (const [date, items] of byDate) {
+    const log = await prisma.dailyLog.upsert({
+      where: { date },
+      update: {},
+      create: {
+        date,
+        mits: [],
+        routineChecklist: DEFAULT_ROUTINE_CHECKLIST,
+        dietChecklist: DEFAULT_DIET_CHECKLIST,
+      },
+    });
+
+    const lines = items.map((i) => `- ${i.text}`).join("\n");
+    const existing = log.brainDump ?? "";
+    const next = existing.trim() ? `${existing.replace(/\s+$/, "")}\n${lines}` : lines;
+
+    await prisma.$transaction([
+      prisma.dailyLog.update({ where: { date }, data: { brainDump: next } }),
+      prisma.inboxItem.updateMany({
+        where: { id: { in: items.map((i) => i.id) } },
+        data: { sorted: true },
+      }),
+    ]);
+  }
+}
