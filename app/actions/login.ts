@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { AUTH_COOKIE, makeAuthCookieValue, verifyPasscode } from "@/lib/auth";
+import { AUTH_COOKIE, SESSION_SECONDS, makeAuthCookieValue, verifyPasscode } from "@/lib/auth";
 
 export async function login(formData: FormData) {
   const passcode = String(formData.get("passcode") ?? "");
@@ -18,7 +18,7 @@ export async function login(formData: FormData) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 365,
+    maxAge: SESSION_SECONDS,
   });
 
   redirect(next || "/");
